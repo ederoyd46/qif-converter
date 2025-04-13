@@ -22,13 +22,8 @@ func ReadAccountEntry(scanner *bufio.Scanner, recordSeparator string) AccountEnt
 		switch key {
 		case "N":
 			entry.Name = val
-			break
 		case "T":
 			entry.AccountType = val
-		}
-		more := scanner.Scan()
-		if !more {
-			break
 		}
 	}
 	return entry

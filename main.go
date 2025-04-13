@@ -56,26 +56,20 @@ func main() {
 			accounts = append(accounts, &account)
 			currentAccount = &account
 			currentEntity = Account
-			break
 		case "!Type:Class":
 			currentEntity = None
-			break
 		case "!Type:Bank":
 			currentEntity = Account
-			break
 		case "!Type:CCard":
 			currentEntity = Account
-			break
 		case "!Type:Cat":
 			currentEntity = None
-			break
 		}
 
 		switch currentEntity {
 		case Account:
 			currentAccount.Transactions = append(currentAccount.Transactions, model.ReadTransactionEntry(scanner, EndOfRecord))
-			break
-		default:
+		case None:
 			skipEntry(scanner)
 		}
 	}
