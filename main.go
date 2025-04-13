@@ -6,7 +6,6 @@ import (
 	"os"
 	"qif-converter/model"
 	"qif-converter/model/transformer"
-	"strconv"
 	"strings"
 )
 
@@ -53,32 +52,31 @@ func main() {
 		header := scanner.Text()
 		switch header {
 		case "!Account":
-			//New Account
-			account := model.Account{AccountEntry: readAccountEntry(scanner), Transactions: []model.TransactionEntry{}}
+			account := model.Account{AccountEntry: model.ReadAccountEntry(scanner, EndOfRecord), Transactions: []model.TransactionEntry{}}
 			accounts = append(accounts, &account)
 			currentAccount = &account
 			currentEntity = Account
 			break
 		case "!Type:Class":
-			skipEntry(scanner)
-			// currentEntity = None
+			currentEntity = None
 			break
 		case "!Type:Bank":
-			skipEntry(scanner)
-			// currentEntity = None
+			currentEntity = Account
 			break
 		case "!Type:CCard":
-			skipEntry(scanner)
-			// currentEntity = None
+			currentEntity = Account
 			break
 		case "!Type:Cat":
-			skipEntry(scanner)
-			// currentEntity = None
+			currentEntity = None
+			break
+		}
+
+		switch currentEntity {
+		case Account:
+			currentAccount.Transactions = append(currentAccount.Transactions, model.ReadTransactionEntry(scanner, EndOfRecord))
 			break
 		default:
-			if currentEntity == Account {
-				currentAccount.Transactions = append(currentAccount.Transactions, readTransactionEntry(scanner))
-			}
+			skipEntry(scanner)
 		}
 	}
 
@@ -95,73 +93,4 @@ func skipEntry(scanner *bufio.Scanner) {
 		}
 		scanner.Scan()
 	}
-}
-
-func readAccountEntry(scanner *bufio.Scanner) model.AccountEntry {
-	entry := model.AccountEntry{}
-	//Move to the next line as we don't care about the !Account header
-	scanner.Scan()
-	for {
-		value := scanner.Text()
-		if value == EndOfRecord {
-			break
-		}
-
-		key := value[0:1]
-		val := value[1:]
-
-		switch key {
-		case "N":
-			entry.Name = val
-			break
-		case "T":
-			entry.AccountType = val
-		}
-		more := scanner.Scan()
-		if !more {
-			break
-		}
-	}
-	return entry
-}
-
-func readTransactionEntry(scanner *bufio.Scanner) model.TransactionEntry {
-	entry := model.TransactionEntry{}
-	for {
-		value := scanner.Text()
-		if value == EndOfRecord {
-			break
-		}
-
-		key := value[0:1]
-		val := value[1:]
-
-		switch key {
-		case "D":
-			entry.Date = val
-			break
-		case "T":
-			amount, err := strconv.ParseFloat(val, 32)
-			if err != nil {
-				os.Stderr.WriteString(fmt.Sprintf("Could not convert value %q to a number\n", val))
-				amount = 0
-			}
-			entry.Amount = float32(amount)
-			break
-		case "M":
-			entry.Memo = val
-			break
-		case "P":
-			entry.Payee = val
-			break
-		case "L":
-			entry.Category = val
-		}
-
-		more := scanner.Scan()
-		if !more {
-			break
-		}
-	}
-	return entry
 }
