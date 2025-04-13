@@ -1,2 +1,3 @@
 *.qif
 *.json
+.DS_Store

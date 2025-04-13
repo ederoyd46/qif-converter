@@ -2,9 +2,10 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
+	"qif-converter/model"
+	"qif-converter/model/transformer"
 	"strconv"
 	"strings"
 )
@@ -16,25 +17,6 @@ import (
 // )
 
 const EndOfRecord = "^"
-
-type TransactionEntry struct {
-	Date     string  `json:"date"`     //D
-	Amount   float32 `json:"amount"`   //T | U
-	Memo     string  `json:"memo"`     //M
-	Payee    string  `json:"payee"`    //P
-	Cleared  bool    `json:"cleared"`  //C
-	Category string  `json:"category"` //L
-}
-
-type AccountEntry struct {
-	Name        string `json:"name"` //N
-	AccountType string `json:"type"` //T
-}
-
-type Account struct {
-	AccountEntry
-	Transactions []TransactionEntry
-}
 
 func getFileName(args []string) (string, error) {
 	for _, arg := range args {
@@ -63,32 +45,32 @@ func main() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-
-	accounts := make([]*Account, 0)
-	var currentAccount *Account
+	accounts := make(model.Accounts, 0)
+	var currentAccount *model.Account
 
 	for scanner.Scan() {
 		header := scanner.Text()
 		switch header {
 		case "!Account":
 			//New Account
-			account := Account{readAccountEntry(scanner), []TransactionEntry{}}
+			account := model.Account{AccountEntry: readAccountEntry(scanner), Transactions: []model.TransactionEntry{}}
 			accounts = append(accounts, &account)
 			currentAccount = &account
 			break
 		default:
+			//Probably a transaction
 			currentAccount.Transactions = append(currentAccount.Transactions, readTransactionEntry(scanner))
 		}
 	}
 
-	result, err := json.Marshal(accounts)
+	result, err := transformer.ToJSON(accounts)
 	handleError(err)
 	os.Stdout.Write(result)
 
 }
 
-func readAccountEntry(scanner *bufio.Scanner) AccountEntry {
-	entry := AccountEntry{}
+func readAccountEntry(scanner *bufio.Scanner) model.AccountEntry {
+	entry := model.AccountEntry{}
 	//Move to the next line as we don't care about the !Account header
 	scanner.Scan()
 	for {
@@ -115,8 +97,8 @@ func readAccountEntry(scanner *bufio.Scanner) AccountEntry {
 	return entry
 }
 
-func readTransactionEntry(scanner *bufio.Scanner) TransactionEntry {
-	entry := TransactionEntry{}
+func readTransactionEntry(scanner *bufio.Scanner) model.TransactionEntry {
+	entry := model.TransactionEntry{}
 	for {
 		value := scanner.Text()
 		if value == EndOfRecord {
@@ -133,7 +115,7 @@ func readTransactionEntry(scanner *bufio.Scanner) TransactionEntry {
 		case "T":
 			amount, err := strconv.ParseFloat(val, 32)
 			if err != nil {
-				os.Stderr.WriteString(fmt.Sprintf("BUG! Could not convert value %q to a number\n", val))
+				os.Stderr.WriteString(fmt.Sprintf("Could not convert value %q to a number\n", val))
 				amount = 0
 			}
 			entry.Amount = float32(amount)
