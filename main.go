@@ -10,13 +10,14 @@ import (
 	"strings"
 )
 
-// type Output int
-// const (
-// 	OutputJSON Output = iota
-// 	OuputCSV
-// )
-
 const EndOfRecord = "^"
+
+type EntityType int
+
+const (
+	None EntityType = iota
+	Account
+)
 
 func getFileName(args []string) (string, error) {
 	for _, arg := range args {
@@ -26,7 +27,6 @@ func getFileName(args []string) (string, error) {
 	}
 
 	return "", fmt.Errorf("Could not find file in args %v", args)
-
 }
 
 func handleError(err error) {
@@ -47,6 +47,7 @@ func main() {
 	scanner := bufio.NewScanner(file)
 	accounts := make(model.Accounts, 0)
 	var currentAccount *model.Account
+	var currentEntity EntityType
 
 	for scanner.Scan() {
 		header := scanner.Text()
@@ -56,17 +57,44 @@ func main() {
 			account := model.Account{AccountEntry: readAccountEntry(scanner), Transactions: []model.TransactionEntry{}}
 			accounts = append(accounts, &account)
 			currentAccount = &account
+			currentEntity = Account
+			break
+		case "!Type:Class":
+			skipEntry(scanner)
+			// currentEntity = None
+			break
+		case "!Type:Bank":
+			skipEntry(scanner)
+			// currentEntity = None
+			break
+		case "!Type:CCard":
+			skipEntry(scanner)
+			// currentEntity = None
+			break
+		case "!Type:Cat":
+			skipEntry(scanner)
+			// currentEntity = None
 			break
 		default:
-			//Probably a transaction
-			currentAccount.Transactions = append(currentAccount.Transactions, readTransactionEntry(scanner))
+			if currentEntity == Account {
+				currentAccount.Transactions = append(currentAccount.Transactions, readTransactionEntry(scanner))
+			}
 		}
 	}
 
 	result, err := transformer.ToJSON(accounts)
 	handleError(err)
 	os.Stdout.Write(result)
+}
 
+func skipEntry(scanner *bufio.Scanner) {
+	for {
+		value := scanner.Text()
+		if value == EndOfRecord {
+			break
+		}
+		scanner.Scan()
+	}
 }
 
 func readAccountEntry(scanner *bufio.Scanner) model.AccountEntry {
