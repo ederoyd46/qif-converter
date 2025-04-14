@@ -1,3 +1,4 @@
 *.qif
 *.json
 .DS_Store
+result
