@@ -28,19 +28,19 @@ func getFileName(args []string) (string, error) {
 	return "", fmt.Errorf("Could not find file in args %v", args)
 }
 
-func handleError(err error) {
+func handleFatalError(err error) {
 	if err != nil {
-		fmt.Println(err)
+		os.Stderr.WriteString(fmt.Sprintf("Fatal error occurred [%v]", err))
 		os.Exit(1)
 	}
 }
 
 func main() {
 	fileName, err := getFileName(os.Args)
-	handleError(err)
+	handleFatalError(err)
 
 	file, err := os.Open(fileName)
-	handleError(err)
+	handleFatalError(err)
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
@@ -52,30 +52,30 @@ func main() {
 		header := scanner.Text()
 		switch header {
 		case "!Account":
-			account := model.Account{AccountEntry: model.ReadAccountEntry(scanner, EndOfRecord), Transactions: []model.TransactionEntry{}}
+			account := model.NewAccount(model.ReadAccountEntry(scanner, EndOfRecord))
 			accounts = append(accounts, &account)
 			currentAccount = &account
 			currentEntity = Account
-		case "!Type:Class":
-			currentEntity = None
 		case "!Type:Bank":
 			currentEntity = Account
 		case "!Type:CCard":
 			currentEntity = Account
+		case "!Type:Class":
+			currentEntity = None
 		case "!Type:Cat":
 			currentEntity = None
 		}
 
 		switch currentEntity {
 		case Account:
-			currentAccount.Transactions = append(currentAccount.Transactions, model.ReadTransactionEntry(scanner, EndOfRecord))
+			currentAccount.AppendTransaction(model.ReadTransactionEntry(scanner, EndOfRecord))
 		case None:
 			skipEntry(scanner)
 		}
 	}
 
 	result, err := transformer.ToJSON(accounts)
-	handleError(err)
+	handleFatalError(err)
 	os.Stdout.Write(result)
 }
 

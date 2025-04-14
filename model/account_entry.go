@@ -1,10 +1,36 @@
 package model
 
-import "bufio"
+import (
+	"bufio"
+	"encoding/json"
+)
 
 type AccountEntry struct {
-	Name        string `json:"name"` //N
-	AccountType string `json:"type"` //T
+	name        string //N
+	accountType string //T
+}
+
+func (self *AccountEntry) SetName(name string) {
+	self.name = name
+}
+
+func (self AccountEntry) GetName() string {
+	return self.name
+}
+
+func (self AccountEntry) GetAccountType() string {
+	return self.accountType
+}
+
+func (self *AccountEntry) SetAccountType(accountType string) {
+	self.accountType = accountType
+}
+
+func NewAccountEntry(name string, accountType string) AccountEntry {
+	return AccountEntry{
+		name:        name,
+		accountType: accountType,
+	}
 }
 
 func ReadAccountEntry(scanner *bufio.Scanner, recordSeparator string) AccountEntry {
@@ -21,10 +47,24 @@ func ReadAccountEntry(scanner *bufio.Scanner, recordSeparator string) AccountEnt
 
 		switch key {
 		case "N":
-			entry.Name = val
+			entry.SetName(val)
 		case "T":
-			entry.AccountType = val
+			entry.SetAccountType(val)
 		}
 	}
 	return entry
+}
+
+func (self AccountEntry) MarshalJSON() ([]byte, error) {
+	type PublicAccountEntry struct {
+		Name        string `json:"account_name"`
+		AccountType string `json:"account_type"`
+	}
+
+	entry := PublicAccountEntry{
+		Name:        self.name,
+		AccountType: self.accountType,
+	}
+
+	return json.Marshal(entry)
 }
