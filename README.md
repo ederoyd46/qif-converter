@@ -1,6 +1,6 @@
 # QIF Converter
 
-This project is a Go-based application for converting QIF ([Quicken Interchange Format](https://en.wikipedia.org/wiki/Quicken_Interchange_Format)) files.
+This project is a Go-based application for converting QIF ([Quicken Interchange Format](https://en.wikipedia.org/wiki/Quicken_Interchange_Format)) files to JSON.
 
 Currently only exported qif files from Homebank are supported. But it should work to some degree with any qif file.
 
@@ -19,7 +19,7 @@ Currently only exported qif files from Homebank are supported. But it should wor
 
 2. Build the project:
     ```bash
-    go build
+    go build -o qif-converter
     ```
 
 3. Run the application:

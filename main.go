@@ -1,23 +1,29 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"qif-converter/model"
-	"qif-converter/model/transformer"
+	"qif-converter/scanner"
+	"qif-converter/transformer"
 	"strings"
 )
 
-const EndOfRecord = "^"
+func main() {
+	fileName, err := getFileName(os.Args)
+	handleFatalError(err)
 
-type EntityType int
+	file, err := os.Open(fileName)
+	handleFatalError(err)
+	defer file.Close()
 
-const (
-	None EntityType = iota
-	Account
-)
+	accounts := scanner.ScanAccounts(file)
 
+	result, err := transformer.ToJSON(accounts)
+	handleFatalError(err)
+	os.Stdout.Write(result)
+}
+
+// Get the file name from the list of arguments, it does not matter which position it's in.
 func getFileName(args []string) (string, error) {
 	for _, arg := range args {
 		if strings.HasSuffix(arg, ".qif") {
@@ -28,63 +34,10 @@ func getFileName(args []string) (string, error) {
 	return "", fmt.Errorf("Could not find file in args %v", args)
 }
 
+// Default error handler for fatal errors.
 func handleFatalError(err error) {
 	if err != nil {
 		os.Stderr.WriteString(fmt.Sprintf("Fatal error occurred [%v]", err))
 		os.Exit(1)
-	}
-}
-
-func main() {
-	fileName, err := getFileName(os.Args)
-	handleFatalError(err)
-
-	file, err := os.Open(fileName)
-	handleFatalError(err)
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	accounts := make(model.Accounts, 0)
-	var currentAccount *model.Account
-	var currentEntity EntityType
-
-	for scanner.Scan() {
-		header := scanner.Text()
-		switch header {
-		case "!Account":
-			account := model.NewAccount(model.ReadAccountEntry(scanner, EndOfRecord))
-			accounts = append(accounts, &account)
-			currentAccount = &account
-			currentEntity = Account
-		case "!Type:Bank":
-			currentEntity = Account
-		case "!Type:CCard":
-			currentEntity = Account
-		case "!Type:Class":
-			currentEntity = None
-		case "!Type:Cat":
-			currentEntity = None
-		}
-
-		switch currentEntity {
-		case Account:
-			currentAccount.AppendTransaction(model.ReadTransactionEntry(scanner, EndOfRecord))
-		case None:
-			skipEntry(scanner)
-		}
-	}
-
-	result, err := transformer.ToJSON(accounts)
-	handleFatalError(err)
-	os.Stdout.Write(result)
-}
-
-func skipEntry(scanner *bufio.Scanner) {
-	for {
-		value := scanner.Text()
-		if value == EndOfRecord {
-			break
-		}
-		scanner.Scan()
 	}
 }

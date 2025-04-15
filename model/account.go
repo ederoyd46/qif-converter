@@ -9,8 +9,8 @@ type Account struct {
 	transactions []TransactionEntry
 }
 
-func NewAccount(accountEntry AccountEntry) Account {
-	return Account{
+func NewAccount(accountEntry AccountEntry) *Account {
+	return &Account{
 		accountEntry: accountEntry,
 		transactions: []TransactionEntry{},
 	}
