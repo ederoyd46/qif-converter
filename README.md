@@ -47,7 +47,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Issues
 
-* Currently this does not handle (linked) transfers when exporting all accounts from Homebank as the data is not in the expected location. *As a work around, export the accounts as individual qif files.*
+* ~~Currently this does not handle (linked) transfers when exporting all accounts from Homebank as the data is not in the expected location. *As a work around, export the accounts as individual qif files.*~~
 
 ## Nix Alternative Getting Started
 As an alternative to the above, you can also build using the [Nix](https://nixos.org/) package manager.

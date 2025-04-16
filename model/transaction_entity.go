@@ -4,28 +4,20 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // TransactionEntry transaction container
 type TransactionEntry struct {
 	date     string  //D
-	amount   float32 //T | U
+	amount   float64 //T | U
 	memo     string  //M
 	payee    string  //P
 	category string  //L
-}
-
-// NewTransactionEntry Creates a new transaction entry
-func NewTransactionEntry(date string, amount float32, memo string, payee string, category string) TransactionEntry {
-	return TransactionEntry{
-		date:     date,
-		amount:   amount,
-		memo:     memo,
-		payee:    payee,
-		category: category,
-	}
+	linked   bool
 }
 
 // SetDate sets the date of the transaction entry
@@ -39,12 +31,12 @@ func (self TransactionEntry) GetDate() string {
 }
 
 // SetAmount sets the amount of the transaction entry
-func (self *TransactionEntry) SetAmount(amount float32) {
+func (self *TransactionEntry) SetAmount(amount float64) {
 	self.amount = amount
 }
 
 // GetAmount gets the amount of the transaction entry
-func (self TransactionEntry) GetAmount() float32 {
+func (self TransactionEntry) GetAmount() float64 {
 	return self.amount
 }
 
@@ -72,12 +64,30 @@ func (self TransactionEntry) GetPayee() string {
 
 // SetCategory sets the category of the transaction entry
 func (self *TransactionEntry) SetCategory(category string) {
+	if strings.HasPrefix(category, "[") && strings.HasSuffix(category, "]") {
+		self.linked = true
+	}
 	self.category = category
 }
 
 // GetCategory gets the category of the transaction entry
 func (self TransactionEntry) GetCategory() string {
 	return self.category
+}
+
+// IsLinked gets the linked value of the transaction
+func (self TransactionEntry) IsLinked() bool {
+	return self.linked
+}
+
+func (self TransactionEntry) GetLinkedAccount() string {
+	if !self.IsLinked() {
+		return ""
+	}
+
+	//Lines need to be of len > 1 but they will all be or they wouldn't pass the setter
+	account := self.category[1 : len(self.category)-1]
+	return account
 }
 
 // ReadTransactionEntry Read buffer to build a transaction entry
@@ -102,7 +112,7 @@ func ReadTransactionEntry(scanner *bufio.Scanner, recordSeparator string) Transa
 				os.Stderr.WriteString(fmt.Sprintf("Could not convert value %q to a number\n", val))
 				amount = 0
 			}
-			entry.SetAmount(float32(amount))
+			entry.SetAmount(amount)
 			break
 		case "M":
 			entry.SetMemo(val)
@@ -126,7 +136,7 @@ func ReadTransactionEntry(scanner *bufio.Scanner, recordSeparator string) Transa
 func (self TransactionEntry) MarshalJSON() ([]byte, error) {
 	type PublicTransactionEntry struct {
 		Date     string  `json:"date"`
-		Amount   float32 `json:"amount"`
+		Amount   float64 `json:"amount"`
 		Memo     string  `json:"memo"`
 		Payee    string  `json:"payee"`
 		Category string  `json:"category"`
@@ -134,7 +144,7 @@ func (self TransactionEntry) MarshalJSON() ([]byte, error) {
 
 	entry := PublicTransactionEntry{
 		Date:     self.date,
-		Amount:   self.amount,
+		Amount:   math.Round(self.amount*100) / 100,
 		Memo:     self.memo,
 		Payee:    self.payee,
 		Category: self.category,

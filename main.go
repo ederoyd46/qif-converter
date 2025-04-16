@@ -20,6 +20,7 @@ func main() {
 
 	result, err := transformer.ToJSON(accounts)
 	handleFatalError(err)
+
 	os.Stdout.Write(result)
 }
 

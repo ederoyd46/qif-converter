@@ -18,35 +18,59 @@ const (
 // ScanAccounts reads a QIF file and returns a list of accounts.
 func ScanAccounts(file io.Reader) model.Accounts {
 	scanner := bufio.NewScanner(file)
-	accounts := make(model.Accounts, 0)
+	accountMap := make(map[string]*model.Account)
+	linkedTransactions := make([]model.TransactionEntry, 0)
+
 	var currentAccount *model.Account
-	var currentEntity entityType
+	var currentEntityType entityType
 
 	for scanner.Scan() {
 		header := scanner.Text()
 		switch header {
 		case "!Account":
 			currentAccount = model.NewAccount(model.ReadAccountEntry(scanner, separator))
-			accounts = append(accounts, currentAccount)
-			currentEntity = account
+			accountMap[currentAccount.GetAccountEntry().GetName()] = currentAccount
+			currentEntityType = account
 		case "!Type:Bank", "!Type:CCard":
-			currentEntity = account
+			currentEntityType = account
 		case "!Type:Class", "!Type:Cat":
-			currentEntity = none
+			currentEntityType = none
 		}
 
-		switch currentEntity {
+		switch currentEntityType {
 		case account:
-			currentAccount.AppendTransaction(model.ReadTransactionEntry(scanner, separator))
+			transaction := model.ReadTransactionEntry(scanner, separator)
+			currentAccount.AppendTransaction(transaction)
+			if transaction.IsLinked() {
+				linkedTransactions = append(linkedTransactions, transaction)
+			}
 		case none:
 			skipEntry(scanner)
 		}
 	}
 
+	populateLinkedTransaction(accountMap, linkedTransactions)
+
+	accounts := make(model.Accounts, 0)
+
+	for _, value := range accountMap {
+		accounts = append(accounts, value)
+	}
+
 	return accounts
 }
 
-// SkipEntry skips the current entry in the scanner.
+// populateLinkedTransaction add the linked transactions to their counterpart account so their amounts will total correctly
+func populateLinkedTransaction(accountMap map[string]*model.Account, linkedTransactions []model.TransactionEntry) {
+	for _, transaction := range linkedTransactions {
+		if account, ok := accountMap[transaction.GetLinkedAccount()]; ok {
+			transaction.SetAmount(transaction.GetAmount() * -1)
+			account.AppendTransaction(transaction)
+		}
+	}
+}
+
+// skipEntry skips the current entry in the scanner.
 func skipEntry(scanner *bufio.Scanner) {
 	for {
 		value := scanner.Text()

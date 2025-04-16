@@ -32,14 +32,6 @@ func (self AccountEntry) GetAccountType() string {
 	return self.name
 }
 
-// NewAccountEntry creates a new account entry
-func NewAccountEntry(name string, accountType string) AccountEntry {
-	return AccountEntry{
-		name:        name,
-		accountType: accountType,
-	}
-}
-
 // ReadAccountEntry Read buffer to build an account entry
 func ReadAccountEntry(scanner *bufio.Scanner, recordSeparator string) AccountEntry {
 	entry := AccountEntry{}

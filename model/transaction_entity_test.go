@@ -20,7 +20,13 @@ LTest Category
 	scanner.Split(bufio.ScanLines)
 	scanner.Scan() // Need to call Scan once to initialize the scanner
 
-	want := model.NewTransactionEntry("2023-10-26", 100.50, "Test Memo", "Test Payee", "Test Category")
+	var want model.TransactionEntry
+	want.SetDate("2023-10-26")
+	want.SetAmount(100.50)
+	want.SetMemo("Test Memo")
+	want.SetPayee("Test Payee")
+	want.SetCategory("Test Category")
+
 	got := model.ReadTransactionEntry(scanner, "^")
 
 	if !reflect.DeepEqual(got, want) {

@@ -18,7 +18,10 @@ TBank
 	scanner.Split(bufio.ScanLines)
 	scanner.Scan() // Need to call Scan once to initialize the scanner
 
-	want := model.NewAccountEntry("My Test Bank Account", "Bank")
+	var want model.AccountEntry
+	want.SetName("My Test Bank Account")
+	want.SetAccountType("Bank")
+
 	got := model.ReadAccountEntry(scanner, "^")
 
 	if !reflect.DeepEqual(got, want) {
