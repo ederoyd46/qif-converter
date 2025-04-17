@@ -105,7 +105,6 @@ func ReadTransactionEntry(scanner *bufio.Scanner, recordSeparator string) Transa
 		switch key {
 		case "D":
 			entry.SetDate(val)
-			break
 		case "T":
 			amount, err := strconv.ParseFloat(val, 32)
 			if err != nil {
@@ -113,13 +112,10 @@ func ReadTransactionEntry(scanner *bufio.Scanner, recordSeparator string) Transa
 				amount = 0
 			}
 			entry.SetAmount(amount)
-			break
 		case "M":
 			entry.SetMemo(val)
-			break
 		case "P":
 			entry.SetPayee(val)
-			break
 		case "L":
 			entry.SetCategory(val)
 		}

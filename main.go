@@ -32,7 +32,7 @@ func getFileName(args []string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("Could not find file in args %v", args)
+	return "", fmt.Errorf("could not find file in args %v", args)
 }
 
 // Default error handler for fatal errors.
